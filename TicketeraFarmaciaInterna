@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ticket CMV - 80mm</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #eef1f5;
+      color: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .logo-superior {
+      width: 60px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      color: #00538A;
+      margin-bottom: 15px;
+    }
+
+    .formulario {
+      background-color: white;
+      padding: 15px 20px;
+      border: 1px solid #ccc;
+      max-width: 420px;
+      width: 100%;
+      margin-bottom: 30px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      font-size: 12px;
+      font-family: Arial, sans-serif;
+    }
+
+    .botones {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    button {
+      padding: 8px 16px;
+      font-size: 13px;
+      background-color: #00538A;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    #printable {
+      width: 72mm;
+      font-size: 10px;
+      line-height: 1.4;
+      background-color: white;
+      padding: 4mm;
+      font-family: Arial, sans-serif;
+      box-sizing: border-box;
+    }
+
+    #printable img {
+      width: 200px;
+      height: auto;
+      display: block;
+      margin: 0 auto 12px;
+      image-rendering: crisp-edges;
+    }
+
+    @page {
+      size: 80mm auto;
+      margin: 0;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      #printable, #printable * {
+        visibility: visible;
+      }
+
+      #printable {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 72mm;
+        margin: 0;
+        padding: 0;
+      }
+
+      h3 {
+        font-size: 11px;
+        margin-bottom: 8px;
+        text-align: center;
+      }
+
+      p {
+        margin: 3px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <img src="logo.png" alt="Logo CMV" class="logo-superior">
+  <h2>Generar correo para impresión</h2>
+
+  <div class="formulario">
+    <label for="asunto">Asunto:</label>
+    <input type="text" id="asunto" placeholder="Ej: Recordatorio de cita médica">
+
+    <label for="cuerpo">Cuerpo del mensaje:</label>
+    <textarea id="cuerpo" rows="5" placeholder="Ej: Estimado paciente, le recordamos su cita para..."></textarea>
+
+    <div class="botones">
+      <button onclick="generarCorreo()">Agregar contenido</button>
+      <button onclick="window.print()">Imprimir</button>
+    </div>
+  </div>
+
+  <div id="printable"></div>
+
+  <script>
+    function generarCorreo() {
+      const asunto = document.getElementById("asunto").value.trim();
+      const cuerpo = document.getElementById("cuerpo").value.trim();
+
+      if (!asunto && !cuerpo) {
+        alert("Por favor, completa al menos el asunto o el cuerpo.");
+        return;
+      }
+
+      const nombreMatch = asunto.match(/NOMBRE:\s*(.+?)\s+DNI:/i);
+      const dniMatch = asunto.match(/DNI:\s*(\d+)/i);
+
+      const nombre = nombreMatch ? nombreMatch[1].trim() : "Nombre no encontrado";
+      const dni = dniMatch ? dniMatch[1] : "DNI no encontrado";
+
+      const direccionMatch = cuerpo.match(/dirección\s+(.+?)(,|\n|-REFERECIA| REFE| requiere)/i);
+      const direccion = direccionMatch ? direccionMatch[1].trim() : "Dirección no encontrada";
+
+      const medicamentosRaw = cuerpo.split("requiere de los siguientes medicamentos:")[1] || "";
+      const medicamentosSinEncabezado = medicamentosRaw
+        .split(/\r?\n/)
+        .filter(line => !line.trim().toUpperCase().startsWith("MEDICAMENTO CONCENTRACIÓN PRESENTACIÓN CANTIDAD"))
+        .join("\n");
+
+      const medicamentosProcesados = medicamentosSinEncabezado.trim();
+
+      const htmlFinal = `
+        <img src="logo.png" alt="Logo CMV">
+        <h3>Resumen de Pedido</h3>
+        <p><strong>Datos del destinatario:</strong></p>
+        <p><strong>Nombres:</strong> ${nombre}</p>
+        <p><strong>DNI/CEX:</strong> ${dni}</p>
+        <p><strong>DIRECCION:</strong> ${direccion}</p>
+        <br>
+        <p><strong>MEDICAMENTOS A ENTREGAR:</strong></p>
+        <pre style="white-space: pre-wrap; font-family: Arial, sans-serif;">
+${medicamentosProcesados}
+        </pre>
+        <br>
+      `;
+
+      document.getElementById("printable").innerHTML = htmlFinal;
+    }
+  </script>
+
+</body>
+</html>
